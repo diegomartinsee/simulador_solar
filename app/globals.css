@@ -17,6 +17,33 @@ body {
   border-radius: 1rem;
 }
 
+.glass-premium {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-premium:hover {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Status Glows */
+.border-glow-blue { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
+.border-glow-amber { border-color: rgba(245, 158, 11, 0.3); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1); }
+.border-glow-purple { border-color: rgba(167, 139, 250, 0.3); box-shadow: 0 0 15px rgba(167, 139, 250, 0.1); }
+.border-glow-emerald { border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
+.border-glow-red { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 15px rgba(239, 68, 68, 0.1); }
+
+.border-glow-blue:hover { border-color: rgba(59, 130, 246, 0.6); box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+.border-glow-amber:hover { border-color: rgba(245, 158, 11, 0.6); box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
+.border-glow-purple:hover { border-color: rgba(167, 139, 250, 0.6); box-shadow: 0 0 20px rgba(167, 139, 250, 0.2); }
+.border-glow-emerald:hover { border-color: rgba(16, 185, 129, 0.6); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+.border-glow-red:hover { border-color: rgba(239, 68, 68, 0.6); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+
 /* Input styling */
 .solar-input {
   background: rgba(15, 23, 42, 0.8);

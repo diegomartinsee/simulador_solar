@@ -59,10 +59,19 @@ export function calcularInvestimento(kwp: number, valorPorKwp: number): number {
 }
 
 /**
- * Calcula a economia mensal com base no valor da conta.
+ * Calcula a economia mensal limite, respeitando o custo de disponibilidade.
  */
-export function calcularEconomiaMensal(valorConta: number): number {
-    return valorConta * CONFIG.COMPENSACAO_ENERGIA;
+export function calcularEconomiaMensal(valorConta: number, tarifa: number, geracaoMensalKwh: number, fatorCompensacao: number, tipoConexao: 'Monofásico' | 'Bifásico' | 'Trifásico'): { economia: number; custoFixo: number } {
+    const economiaTeorica = geracaoMensalKwh * tarifa * fatorCompensacao;
+    const custoFixoLivre = (CONFIG.TARIFA_MINIMA[tipoConexao] * tarifa) + CONFIG.ILUMINACAO_PUBLICA_MEDIA;
+
+    // O cliente não pode economizar mais do que a sobra entre Conta Antiga - Conta Mínima
+    const economiaMaxPossivel = Math.max(0, valorConta - custoFixoLivre);
+
+    return {
+        economia: Math.min(economiaTeorica, economiaMaxPossivel),
+        custoFixo: valorConta > custoFixoLivre ? (valorConta - Math.min(economiaTeorica, economiaMaxPossivel)) : valorConta
+    };
 }
 
 /**
@@ -124,21 +133,27 @@ export function calcularFluxoCaixaAvancado(
     investimento: number,
     geracaoAnualAno1: number,
     tarifaInicial: number,
+    fatorCompensacao: number,
+    valorContaInicial: number,
+    tipoConexao: 'Monofásico' | 'Bifásico' | 'Trifásico',
     taxaInflacaoEnergia: number = CONFIG.INFLACAO_ENERGETICA_ANUAL
 ): number[] {
     const fluxo: number[] = [-investimento];
     const manutencaoAnual = investimento * CONFIG.CUSTO_MANUTENCAO_ANUAL_PERCENTUAL;
 
     for (let ano = 1; ano <= CONFIG.VIDA_UTIL_ANOS; ano++) {
-        // Degradação: 2% no ano 1, 0.55% nos demais
         const fatorDegradacao = ano === 1
             ? (1 - CONFIG.DEGRADACAO.ano1)
             : (1 - CONFIG.DEGRADACAO.ano1) * Math.pow(1 - CONFIG.DEGRADACAO.anual, ano - 1);
 
         const geracaoNoAno = geracaoAnualAno1 * fatorDegradacao;
         const tarifaNoAno = tarifaInicial * Math.pow(1 + taxaInflacaoEnergia, ano - 1);
+        const valorContaNoAno = valorContaInicial * Math.pow(1 + taxaInflacaoEnergia, ano - 1);
 
-        const economiaAnual = geracaoNoAno * tarifaNoAno * CONFIG.COMPENSACAO_ENERGIA;
+        // Uso do novo helper
+        const { economia } = calcularEconomiaMensal(valorContaNoAno, tarifaNoAno, geracaoNoAno / 12, fatorCompensacao, tipoConexao);
+        const economiaAnual = economia * 12;
+
         fluxo.push(economiaAnual - manutencaoAnual);
     }
 
@@ -151,6 +166,10 @@ export function calcularFluxoCaixaAvancado(
 export function calcularTIR(fluxoCaixa: number[], precisao = 0.00001): number {
     let taxa = 0.1;
 
+    // Defesa 1: Se o sistema não se paga nunca (fluxo sempre negativo), a TIR é menor que zero.
+    const hasPositiveCashFlow = fluxoCaixa.slice(1).some(val => val > 0);
+    if (!hasPositiveCashFlow) return -1; // Retorna -100% de TIR (inviável na prática)
+
     for (let iteracao = 0; iteracao < 1000; iteracao++) {
         let vpl = 0;
         let derivada = 0;
@@ -161,6 +180,9 @@ export function calcularTIR(fluxoCaixa: number[], precisao = 0.00001): number {
             derivada -= (t * fluxoCaixa[t]) / Math.pow(1 + taxa, t + 1);
         }
 
+        // Defesa 2: Prevenir NaN / Zero Division Error
+        if (derivada === 0) return taxa;
+
         const novaTaxa = taxa - vpl / derivada;
 
         if (Math.abs(novaTaxa - taxa) < precisao) {
@@ -170,7 +192,8 @@ export function calcularTIR(fluxoCaixa: number[], precisao = 0.00001): number {
         taxa = novaTaxa;
     }
 
-    return taxa;
+    // Defesa 3: Se não convergir, retorna o mais próximo que chegou (evitando NaN em telas)
+    return isNaN(taxa) ? 0 : taxa;
 }
 
 /**
@@ -204,21 +227,21 @@ export function calcularComparativo(
     fluxoCaixaSolar: number[],
     taxaDesconto: number
 ): SimulacaoResultado['comparativoInvestimentos'] {
-    const anos = CONFIG.ANOS_GRAFICO_COMPARATIVO;
-    const anosArr = Array.from({ length: anos }, (_, i) => i + 1);
-    const solar: number[] = [];
-    const cdi: number[] = [];
-    const fii: number[] = [];
-    const imovel: number[] = [];
+    const anos = CONFIG.VIDA_UTIL_ANOS;
+    const anosArr = Array.from({ length: anos + 1 }, (_, i) => i); // 0 a 25
+    const solar: number[] = [-investimento];
+    const cdi: number[] = [0]; // Capital "extra" gerado
+    const fii: number[] = [0];
+    const imovel: number[] = [0];
 
-    let acumuladoSolar = 0;
+    let acumuladoSolar = -investimento;
 
     for (let ano = 1; ano <= anos; ano++) {
-        // Solar: acumulado líquido
+        // Solar: Patrimônio Líquido (Investimento Negativo + Economias Acumuladas)
         acumuladoSolar += fluxoCaixaSolar[ano];
         solar.push(Math.round(acumuladoSolar));
 
-        // Comparativos: crescimento de capital
+        // Comparativos: Quanto o capital renderia acima do zero
         cdi.push(Math.round(investimento * Math.pow(1 + CONFIG.TAXAS_COMPARATIVAS.CDI, ano) - investimento));
         fii.push(Math.round(investimento * Math.pow(1 + CONFIG.TAXAS_COMPARATIVAS.FII, ano) - investimento));
         imovel.push(Math.round(investimento * Math.pow(1 + CONFIG.TAXAS_COMPARATIVAS.IMOVEL, ano) - investimento));
@@ -273,7 +296,7 @@ function gerarEquivalencia(valorEconomia: number): string {
  * Executa a simulação completa com base nos dados de entrada.
  */
 export function executarSimulacao(input: SimulacaoInput): SimulacaoResultado {
-    const { nomeCliente, kwpProjeto, valorPorKwp, tarifaEnergia, orientacao, taxaDesconto } = input;
+    const { nomeCliente, kwpProjeto, valorPorKwp, tarifaEnergia, orientacao, taxaDesconto, tipoConexao, tipoGeracao, valorConta } = input;
 
     // 1. Engenharia do Sistema
     const pr = calcularPR();
@@ -282,15 +305,17 @@ export function executarSimulacao(input: SimulacaoInput): SimulacaoResultado {
     const geracaoAnualAno1 = geracaoMensal.reduce((a, b) => a + b, 0);
     const numeroModulos = Math.round((kwpProjeto * 1000) / input.potenciaModuloWp);
 
+    const fatorCompensacao = tipoGeracao === 'Rateio (Geração Remota)' ? CONFIG.COMPENSACAO_RATEIO : CONFIG.COMPENSACAO_JUNTO_CARGA;
+
     // 2. Fluxo de Caixa e Indicadores
-    const investimentoTotal = kwpProjeto * valorPorKwp;
-    const fluxoCaixa = calcularFluxoCaixaAvancado(investimentoTotal, geracaoAnualAno1, tarifaEnergia);
+    const investimentoTotal = input.capexFinal || (kwpProjeto * valorPorKwp);
+    const fluxoCaixa = calcularFluxoCaixaAvancado(investimentoTotal, geracaoAnualAno1, tarifaEnergia, fatorCompensacao, valorConta, tipoConexao);
     const tir = calcularTIR(fluxoCaixa);
     const vpl = calcularVPL(fluxoCaixa, taxaDesconto);
     const { simples, descontado, dataPaybackSimples } = calcularPaybacks(investimentoTotal, fluxoCaixa, taxaDesconto);
 
     // 3. Auxiliares para UI
-    const economiaMensalMedia = (geracaoAnualAno1 * tarifaEnergia * CONFIG.COMPENSACAO_ENERGIA) / 12;
+    const { economia: economiaMensalMedia, custoFixo } = calcularEconomiaMensal(valorConta, tarifaEnergia, geracaoAnualAno1 / 12, fatorCompensacao, tipoConexao);
     const economiaDiariaMedia = economiaMensalMedia / 30;
     const { score: scoreViabilidade, descricao: scoreDescricao } = calcularScore(descontado, tir);
     const tirMultiploCDI = Math.round((tir / CONFIG.TAXAS_COMPARATIVAS.CDI) * 10) / 10;
@@ -319,8 +344,10 @@ export function executarSimulacao(input: SimulacaoInput): SimulacaoResultado {
         geracaoMensal: geracaoMensal.map(g => Math.round(g)),
         geracaoAnualTotal: Math.round(geracaoAnualAno1),
         investimentoTotal,
+        condicaoPagamento: input.condicaoPagamento,
         economiaMensalMedia: Math.round(economiaMensalMedia),
         economiaDiariaMedia: Math.round(economiaDiariaMedia * 100) / 100,
+        custoFixoResidual: Math.round(custoFixo),
         paybackSimplesAnos: simples,
         paybackDescontadoAnos: descontado,
         dataPaybackSimples,

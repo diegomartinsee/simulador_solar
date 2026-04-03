@@ -11,6 +11,10 @@ export const CONFIG = {
         anual: 4.88
     },
 
+    /** Valores padrão para novos formulários */
+    TARIFA_PADRAO: 0.95,
+    INVESTIMENTO_PADRAO_KWP: 3200, // Preço médio atualizado 2024/2025
+
     /** Fatores de correção por orientação do telhado */
     FATOR_ORIENTACAO: {
         Norte: 1.00,
@@ -24,13 +28,13 @@ export const CONFIG = {
     /** Detalhamento de perdas do Performance Ratio (PR) */
     PERDAS: {
         temperatura: 0.08,
-        mismatch: 0.02,
-        sujeira: 0.03,
+        mismatch: 0.015,
+        sujeira: 0.02,
         cabos_cc: 0.01,
         cabos_ca: 0.01,
-        inversor: 0.03,
+        inversor: 0.025,
         conversao_ac: 0.01,
-        sombreamento_leve: 0.02,
+        sombreamento_leve: 0.01,
     },
 
     /** Degradação dos módulos fotovoltaicos */
@@ -39,8 +43,17 @@ export const CONFIG = {
         anual: 0.0055    // 0.55% nos anos seguintes
     },
 
-    /** Taxa de compensação de energia real (Considerando Fio B, encargos e tributos - Média Brasil) */
-    COMPENSACAO_ENERGIA: 0.85,
+    /** Taxa de compensação (Lei 14.300 / Fio B). Rateio desconta mais pq não há simultaneidade. */
+    COMPENSACAO_JUNTO_CARGA: 0.85,
+    COMPENSACAO_RATEIO: 0.70,
+
+    /** Custo de Disponibilidade (kWh que a concessionária sempre cobra) */
+    TARIFA_MINIMA: {
+        'Monofásico': 30,
+        'Bifásico': 50,
+        'Trifásico': 100,
+    },
+    ILUMINACAO_PUBLICA_MEDIA: 15,
 
     /** Taxa anual de inflação da energia elétrica (default 5% conforme pedido) */
     INFLACAO_ENERGETICA_ANUAL: 0.05,

@@ -1,16 +1,21 @@
 'use client';
 
+import { useMemo } from 'react';
 import { CONFIG } from '@/lib/config';
+import { KitConfig } from '@/app/proposta/page';
 
 interface ProposalCoverProps {
     cliente: string;
     data: string;
+    kitConfig?: KitConfig;
 }
 
-export default function ProposalCover({ cliente, data }: ProposalCoverProps) {
+export default function ProposalCover({ cliente, data, kitConfig }: ProposalCoverProps) {
     const validade = new Date();
     validade.setDate(validade.getDate() + 7);
     const validadeStr = validade.toLocaleDateString('pt-BR');
+    // Ref# estável por sessão — useMemo previne que rerender gere um número diferente
+    const refNumber = useMemo(() => Math.floor(Math.random() * 9000) + 1000, []);
 
     return (
         <section className="relative h-[297mm] w-[210mm] bg-slate-950 text-white overflow-hidden flex flex-col justify-between p-20 page-break-after">
@@ -28,7 +33,7 @@ export default function ProposalCover({ cliente, data }: ProposalCoverProps) {
                 </div>
                 <div className="text-right">
                     <div className="text-amber-400 font-bold text-sm tracking-widest uppercase">Proposta Comercial</div>
-                    <div className="text-slate-500 text-xs">Ref: #SOL-{Math.floor(Math.random() * 9000) + 1000}</div>
+                    <div className="text-slate-500 text-xs">Ref: #SOL-{refNumber}</div>
                 </div>
             </div>
 
@@ -54,7 +59,7 @@ export default function ProposalCover({ cliente, data }: ProposalCoverProps) {
                         </div>
                         <div>
                             <div className="text-slate-400 text-xs uppercase font-bold tracking-wider">Local da Instalação</div>
-                            <div className="text-white">Residencial / Comercial</div>
+                            <div className="text-white">{kitConfig?.enderecoInstalacao || 'Residencial / Comercial'}</div>
                         </div>
                     </div>
                 </div>

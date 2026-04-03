@@ -10,11 +10,15 @@ export interface SimulacaoInput {
     valorConta: number;                 // R$/mês
     tarifaEnergia: number;              // R$/kWh
     cidade?: string;                    // opcional
+    tipoConexao: 'Monofásico' | 'Bifásico' | 'Trifásico';
+    tipoGeracao: 'Junto à Carga' | 'Rateio (Geração Remota)';
     valorPorKwp: number;                // R$/kWp
     kwpProjeto: number;                 // kWp do kit
     potenciaModuloWp: number;           // Ex: 550
     orientacao: 'Norte' | 'Nordeste' | 'Noroeste' | 'Leste' | 'Oeste' | 'Sul';
     taxaDesconto: number;               // % (Selic ou custo de oportunidade)
+    capexFinal?: number;                // Valor fechado pela engenharia
+    condicaoPagamento?: string;         // Em texto livre
 }
 
 /** Score de viabilidade do projeto */
@@ -40,6 +44,8 @@ export interface SimulacaoResultado {
     paybackSimplesAnos: number;
     paybackDescontadoAnos: number;
     dataPaybackSimples: string;
+    condicaoPagamento?: string;
+    custoFixoResidual: number;    // Conta mínima que continua pagando
 
     // Score e viabilidade
     scoreViabilidade: ScoreViabilidade;

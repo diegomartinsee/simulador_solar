@@ -2,9 +2,11 @@
 
 import { CONFIG } from '@/lib/config';
 import { SimulacaoResultado } from '@/types/simulation';
+import { KitConfig } from '@/app/proposta/page';
 
 interface ProposalContentProps {
     resultado: SimulacaoResultado;
+    kitConfig?: KitConfig;
 }
 
 const fmt = (v: number) =>
@@ -13,35 +15,45 @@ const fmt = (v: number) =>
 const fmtPct = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1 }).format(v);
 
-export default function ProposalContent({ resultado }: ProposalContentProps) {
+export default function ProposalContent({ resultado, kitConfig }: ProposalContentProps) {
     const mesesSemSolar = 120; // 10 anos
 
     return (
-        <div className="bg-white text-slate-900 font-sans">
+        <div className="bg-white text-slate-900 font-sans relative">
+
+            {/* WATERMARK SAAS GLOBAL */}
+            <div className="fixed bottom-4 right-8 text-[8px] uppercase tracking-widest text-slate-300 pointer-events-none print:block opacity-50 z-50">
+                ⚡ Gerado por CRM Solar Engine
+            </div>
 
             {/* SEÇÃO 2: APRESENTAÇÃO DA EMPRESA */}
-            <section className="h-[297mm] w-[210mm] p-20 flex flex-col justify-center page-break-after">
-                <div className="max-w-3xl">
-                    <h2 className="text-amber-500 font-black text-xs uppercase tracking-[0.3em] mb-4">Quem somos</h2>
-                    <h3 className="text-5xl font-black text-slate-950 mb-12 leading-tight">Expertise em <br />Energia Renovável</h3>
+            <section className="h-[297mm] w-[210mm] p-20 flex flex-col justify-center page-break-after bg-slate-950 text-white relative">
+                {/* Elemento de background B2B elegante */}
+                <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+                    <div className="w-[800px] h-[800px] bg-amber-500 rounded-full blur-3xl absolute -top-40 -right-40" />
+                </div>
 
-                    <div className="space-y-8 text-xl text-slate-600 leading-relaxed">
+                <div className="max-w-3xl relative z-10">
+                    <h2 className="text-amber-500 font-black text-xs uppercase tracking-[0.3em] mb-4">Quem somos</h2>
+                    <h3 className="text-5xl font-black text-white mb-12 leading-tight">Expertise em <br />Energia Renovável</h3>
+
+                    <div className="space-y-8 text-xl text-slate-300 leading-relaxed">
                         <p>
-                            A <strong className="text-slate-950">{CONFIG.EMPRESA.NOME}</strong> é especializada em soluções completas de geração fotovoltaica,
+                            A <strong className="text-white">{CONFIG.EMPRESA.NOME}</strong> é especializada em soluções completas de geração fotovoltaica,
                             projetadas para transformar telhados em ativos financeiros de alta performance.
                         </p>
                         <p>
                             {CONFIG.EMPRESA.EXPERIENCIA}
                         </p>
-                        <div className="pt-12 grid grid-cols-2 gap-8 border-t border-slate-100">
+                        <div className="pt-12 grid grid-cols-2 gap-8 border-t border-slate-800">
                             <div>
                                 <div className="text-amber-500 font-bold text-sm uppercase tracking-widest mb-2">Responsável Técnico</div>
-                                <div className="text-slate-950 font-bold">{CONFIG.EMPRESA.RESPONSAVEL}</div>
+                                <div className="text-white font-bold">{CONFIG.EMPRESA.RESPONSAVEL}</div>
                                 <div className="text-slate-500 text-sm">{CONFIG.EMPRESA.CREA}</div>
                             </div>
                             <div>
                                 <div className="text-amber-500 font-bold text-sm uppercase tracking-widest mb-2">Compromisso</div>
-                                <div className="text-slate-950 font-bold">Resiliência e Performance</div>
+                                <div className="text-white font-bold">Resiliência e Performance</div>
                                 <div className="text-slate-500 text-sm">Garantia de atendimento técnico</div>
                             </div>
                         </div>
@@ -76,7 +88,7 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
                     <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
                         <div className="text-4xl mb-4">🔋</div>
                         <div className="text-slate-500 text-xs uppercase font-bold tracking-widest mb-1">Compensação Real</div>
-                        <div className="text-4xl font-black text-emerald-600">{fmtPct(CONFIG.COMPENSACAO_ENERGIA)}</div>
+                        <div className="text-4xl font-black text-emerald-600">{fmtPct(CONFIG.COMPENSACAO_JUNTO_CARGA)}</div>
                     </div>
                 </div>
 
@@ -94,7 +106,7 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
                 <h2 className="text-amber-500 font-black text-xs uppercase tracking-[0.3em] mb-4">Engenharia Solar</h2>
                 <h3 className="text-4xl font-black text-slate-950 mb-12">Especificações do Sistema</h3>
 
-                <div className="mb-16">
+                <div>
                     <h4 className="text-sm font-bold border-b-2 border-slate-100 pb-2 mb-6 uppercase tracking-wider text-slate-400">Dados Técnicos</h4>
                     <div className="grid grid-cols-2 gap-y-6 gap-x-12">
                         <div className="flex justify-between">
@@ -105,10 +117,18 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
                             <span className="text-slate-500">Potência por Módulo</span>
                             <span className="font-bold">{resultado.potenciaModuloWp}W</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-500">Tecnologia</span>
-                            <span className="font-bold">Monocristalino Half-Cell</span>
-                        </div>
+                        {kitConfig?.marcaPainel && (
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Marca do Painel</span>
+                                <span className="font-bold">{kitConfig.marcaPainel}</span>
+                            </div>
+                        )}
+                        {kitConfig?.modeloPainel && (
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Modelo</span>
+                                <span className="font-bold">{kitConfig.modeloPainel}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between">
                             <span className="text-slate-500">Eficiência (PR)</span>
                             <span className="font-bold">{fmtPct(resultado.pr)}</span>
@@ -117,10 +137,24 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
                             <span className="text-slate-500">Área Estimada</span>
                             <span className="font-bold">{Math.round(resultado.numeroModulos * 2.5)} m²</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-500">Inversor Sugerido</span>
-                            <span className="font-bold">High Performance</span>
-                        </div>
+                        {kitConfig?.marcaInversor && (
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Inversor</span>
+                                <span className="font-bold">{kitConfig.marcaInversor} {kitConfig.potenciaInversorKw && `${kitConfig.potenciaInversorKw}kW`} ({kitConfig.tipoInversor})</span>
+                            </div>
+                        )}
+                        {kitConfig?.tipoEstrutura && (
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Estrutura</span>
+                                <span className="font-bold">{kitConfig.tipoEstrutura}</span>
+                            </div>
+                        )}
+                        {kitConfig?.enderecoInstalacao && (
+                            <div className="flex justify-between col-span-2">
+                                <span className="text-slate-500">Local de Instalação</span>
+                                <span className="font-bold text-right max-w-[60%]">{kitConfig.enderecoInstalacao}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -137,17 +171,23 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
                         <tbody className="text-sm text-slate-700">
                             <tr className="border-b border-slate-50">
                                 <td className="py-4 font-bold text-slate-950">Módulo Solar</td>
-                                <td className="py-4 font-medium italic text-slate-500">Painéis Tier-1 de alta eficiência</td>
+                                <td className="py-4 font-medium italic text-slate-500">
+                                    {kitConfig?.marcaPainel ? `${kitConfig.marcaPainel} ${kitConfig.modeloPainel}` : 'Painéis Tier-1 de alta eficiência'}
+                                </td>
                                 <td className="py-4 text-right font-black">{resultado.numeroModulos}</td>
                             </tr>
                             <tr className="border-b border-slate-50">
                                 <td className="py-4 font-bold text-slate-950">Inversor</td>
-                                <td className="py-4 font-medium italic text-slate-500">Inversor Interativo com monitoramento Wi-Fi</td>
+                                <td className="py-4 font-medium italic text-slate-500">
+                                    {kitConfig?.marcaInversor ? `${kitConfig.marcaInversor} ${kitConfig.potenciaInversorKw}kW — ${kitConfig.tipoInversor}` : 'Inversor Interativo com monitoramento Wi-Fi'}
+                                </td>
                                 <td className="py-4 text-right font-black">1</td>
                             </tr>
                             <tr className="border-b border-slate-50">
                                 <td className="py-4 font-bold text-slate-950">Estrutura</td>
-                                <td className="py-4 font-medium italic text-slate-500">Alumínio anodizado e fixação em aço inox</td>
+                                <td className="py-4 font-medium italic text-slate-500">
+                                    {kitConfig?.tipoEstrutura ? `Fixação para telhado ${kitConfig.tipoEstrutura} — Alúminio anodizado` : 'Alumínio anodizado e fixação em aço inox'}
+                                </td>
                                 <td className="py-4 text-right font-black">1 kit</td>
                             </tr>
                             <tr className="border-b border-slate-50">
@@ -173,12 +213,15 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
                 <div className="space-y-12">
                     <div className="grid grid-cols-2 gap-12">
                         <div>
-                            <div className="text-slate-500 text-xs uppercase font-bold tracking-widest mb-2">Investimento Total</div>
+                            <div className="text-slate-500 text-xs uppercase font-bold tracking-widest mb-2">Investimento Total (Orçamento)</div>
                             <div className="text-5xl font-black text-amber-500">{fmt(resultado.investimentoTotal)}</div>
                         </div>
+
                         <div>
-                            <div className="text-slate-500 text-xs uppercase font-bold tracking-widest mb-2">Retorno Anual (TIR)</div>
-                            <div className="text-5xl font-black">{fmtPct(resultado.tir)}</div>
+                            <div className="text-slate-500 text-xs uppercase font-bold tracking-widest mb-2">Condição de Pagamento</div>
+                            <div className="text-xl font-bold mt-2 text-white bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl leading-tight">
+                                {resultado.condicaoPagamento || 'À vista ou financiamento bancário (sujeito a análise)'}
+                            </div>
                         </div>
                     </div>
 
@@ -301,7 +344,7 @@ export default function ProposalContent({ resultado }: ProposalContentProps) {
 
                     <div className="text-center pt-20 border-t border-slate-100 opacity-30 italic text-[10px] text-slate-500">
                         *Simulação baseada em dados históricos de irradiação. Os resultados reais podem variar conforme sombreamento local e condições climáticas extremas.
-                        Compensação de {fmtPct(CONFIG.COMPENSACAO_ENERGIA)} estimada considerando encargos setoriais e Fio B conforme Lei 14.300.
+                        Compensação base estimada de {fmtPct(CONFIG.COMPENSACAO_JUNTO_CARGA)} considerando encargos setoriais e Fio B conforme Lei 14.300.
                     </div>
                 </div>
             </section>
